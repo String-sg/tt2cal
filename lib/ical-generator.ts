@@ -1,5 +1,6 @@
 import ical from 'ical-generator'
 import { TimetableData, TimetableEntry } from './types'
+import { getNextMondayWeekType, getWeekType } from './academic-calendar'
 
 export function generateIcal(timetableData: TimetableData, startDate: Date): string {
   const calendar = ical({
