@@ -120,8 +120,8 @@ Return ONLY valid JSON, no markdown formatting.`
       // Step 1: Consolidate odd/even duplicates into "both"
       const consolidatedEntries = consolidateWeekTypes(rawData.entries || [])
 
-      // Step 2: Merge consecutive time blocks
-      const mergedEntries = mergeConsecutiveTimeBlocks(consolidatedEntries)
+      // Step 2: Smart merge consecutive time blocks
+      const mergedEntries = smartMergeTimeBlocks(consolidatedEntries)
 
       const processedData: TimetableData = {
         studentName: rawData.studentName,

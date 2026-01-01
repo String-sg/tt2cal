@@ -40,12 +40,16 @@ export class TwoStageGeminiProcessor {
       const initialEntries = this.convertGridToEntries(gridData)
       console.log(`Converted to ${initialEntries.length} initial entries`)
 
-      // Stage 2: Validation and correction
-      const validationResult = await this.stage2_ValidationCorrection(file, initialEntries)
-      console.log(`Stage 2 completed: ${validationResult.corrections.length} corrections applied`)
-
-      // Apply corrections
-      const correctedEntries = this.applyCorrections(initialEntries, validationResult.corrections)
+      // Stage 2: Validation and correction (temporarily disabled due to API limits)
+      let correctedEntries = initialEntries
+      try {
+        const validationResult = await this.stage2_ValidationCorrection(file, initialEntries)
+        console.log(`Stage 2 completed: ${validationResult.corrections.length} corrections applied`)
+        correctedEntries = this.applyCorrections(initialEntries, validationResult.corrections)
+      } catch (error) {
+        console.warn('Stage 2 failed, proceeding with Stage 1 results:', error.message)
+        correctedEntries = initialEntries
+      }
 
       return {
         studentName: 'Liu Yi Jie', // TODO: Extract from image
