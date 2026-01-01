@@ -2,18 +2,17 @@ import ical from 'ical-generator'
 import { TimetableData, TimetableEntry } from './types'
 import { getNextMondayWeekType, getWeekType } from './academic-calendar'
 
-export function generateIcal(timetableData: TimetableData, startDate: Date): string {
+export function generateIcal(timetableData: TimetableData, startDate?: Date): string {
   const calendar = ical({
     name: `${timetableData.studentName || 'Student'} Timetable`,
     description: `${timetableData.term || 'Academic'} Timetable`,
     timezone: 'Asia/Singapore'
   })
 
-  // Get the Monday of the week containing startDate
-  const monday = new Date(startDate)
-  const dayOfWeek = monday.getDay()
-  const daysToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
-  monday.setDate(monday.getDate() + daysToMonday)
+  // Use next Monday if no start date provided, or calculate from provided date
+  const { monday } = startDate
+    ? { monday: startDate }
+    : getNextMondayWeekType()
 
   timetableData.entries.forEach(entry => {
     const dayOffset = getDayOffset(entry.day)
@@ -29,21 +28,37 @@ export function generateIcal(timetableData: TimetableData, startDate: Date): str
     const endDateTime = new Date(eventDate)
     endDateTime.setHours(endHour, endMinute, 0, 0)
 
-    // Create recurring rule based on week type
+    // Create recurring rule based on week type using academic calendar
     let rrule: any = {
       freq: 'WEEKLY',
-      count: 20 // Assume semester is about 20 weeks
+      count: 40 // Full academic year
     }
+
+    // Use academic calendar to determine actual start dates
+    const currentWeekType = getWeekType(startDateTime)
 
     if (entry.weekType === 'odd') {
       rrule.interval = 2
+      // If current week doesn't match, find the next odd week
+      if (currentWeekType !== 'odd') {
+        const nextOddWeek = getNextMondayWeekType(startDateTime)
+        if (nextOddWeek.weekType === 'odd') {
+          const adjustment = Math.floor((nextOddWeek.monday.getTime() - monday.getTime()) / (7 * 24 * 60 * 60 * 1000))
+          startDateTime.setDate(startDateTime.getDate() + adjustment * 7)
+          endDateTime.setDate(endDateTime.getDate() + adjustment * 7)
+        }
+      }
     } else if (entry.weekType === 'even') {
       rrule.interval = 2
-      // Start from the second week
-      const evenStartDate = new Date(startDateTime)
-      evenStartDate.setDate(evenStartDate.getDate() + 7)
-      startDateTime.setTime(evenStartDate.getTime())
-      endDateTime.setTime(endDateTime.getTime() + 7 * 24 * 60 * 60 * 1000)
+      // If current week doesn't match, find the next even week
+      if (currentWeekType !== 'even') {
+        const nextEvenWeek = getNextMondayWeekType(startDateTime)
+        if (nextEvenWeek.weekType === 'even') {
+          const adjustment = Math.floor((nextEvenWeek.monday.getTime() - monday.getTime()) / (7 * 24 * 60 * 60 * 1000))
+          startDateTime.setDate(startDateTime.getDate() + adjustment * 7)
+          endDateTime.setDate(endDateTime.getDate() + adjustment * 7)
+        }
+      }
     }
 
     calendar.createEvent({
