@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { TimetableData } from './types'
 import { mergeConsecutiveTimeBlocks, consolidateWeekTypes, validateTimetableData } from './timeblocks'
+import { smartMergeTimeBlocks } from './smart-merge'
 import { TwoStageGeminiProcessor } from './two-stage-gemini'
 
 export class GeminiProcessor {
@@ -25,7 +26,7 @@ export class GeminiProcessor {
       }
 
       const consolidatedEntries = consolidateWeekTypes(rawData.entries || [])
-      const mergedEntries = mergeConsecutiveTimeBlocks(consolidatedEntries)
+      const mergedEntries = smartMergeTimeBlocks(consolidatedEntries)
 
       console.log(`Two-stage processing pipeline:`)
       console.log(`  Raw entries: ${rawData.entries?.length || 0}`)
