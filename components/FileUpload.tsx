@@ -43,7 +43,7 @@ export default function FileUpload({ onFileUpload, isProcessing = false }: FileU
 
         <div className="space-y-4">
           <svg
-            className="mx-auto h-6 w-6 md:h-4 md:w-4 text-gray-400"
+            className="mx-auto h-4 w-4 md:h-6 md:w-6 text-gray-400"
             stroke="currentColor"
             fill="none"
             viewBox="0 0 48 48"
