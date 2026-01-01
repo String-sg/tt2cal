@@ -1,5 +1,17 @@
 import { TimetableEntry } from './types'
 
+/**
+ * Merges consecutive timetable entries that represent the same event into single, longer blocks.
+ *
+ * Entries are first sorted by day, week type, and start time to ensure deterministic processing.
+ * Adjacent entries are merged when they share the same day, weekType, subject, and location,
+ * and the end time of the current entry exactly matches the start time of the next entry.
+ * This produces cleaner calendar entries by collapsing multiple contiguous time slots for
+ * the same class into one combined `TimetableEntry`.
+ *
+ * @param entries - The raw timetable entries to normalize and merge.
+ * @returns A new array of `TimetableEntry` objects with consecutive blocks merged.
+ */
 export function mergeConsecutiveTimeBlocks(entries: TimetableEntry[]): TimetableEntry[] {
   // Sort entries by day, weekType, timeStart for consistent processing
   const sortedEntries = [...entries].sort((a, b) => {
