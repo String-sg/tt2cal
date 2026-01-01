@@ -1,4 +1,4 @@
-import ical from 'ical-generator'
+import ical, { ICalRepeatingOptions, ICalEventRepeatingFreq } from 'ical-generator'
 import { TimetableData, TimetableEntry } from './types'
 import { getNextMondayWeekType, getWeekType } from './academic-calendar'
 
@@ -29,8 +29,8 @@ export function generateIcal(timetableData: TimetableData, startDate?: Date): st
     endDateTime.setHours(endHour, endMinute, 0, 0)
 
     // Create recurring rule based on week type using academic calendar
-    let rrule: any = {
-      freq: 'WEEKLY',
+    const rrule: ICalRepeatingOptions = {
+      freq: ICalEventRepeatingFreq.WEEKLY,
       count: 40 // Full academic year
     }
 
