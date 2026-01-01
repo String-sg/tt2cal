@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
-import { TimetableData, TimetableEntry } from './types'
+import { TimetableData } from './types'
 import { mergeConsecutiveTimeBlocks, validateTimetableData } from './timeblocks'
 
 export class GeminiProcessor {
