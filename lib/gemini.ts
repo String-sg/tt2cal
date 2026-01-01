@@ -77,7 +77,27 @@ Return ONLY valid JSON, no markdown formatting.`
         cleanText = cleanText.replace(/^```\s*/, '').replace(/\s*```$/, '')
       }
 
-      return JSON.parse(cleanText)
+      const rawData = JSON.parse(cleanText)
+
+      // Validate the extracted data
+      const validation = validateTimetableData(rawData)
+      if (!validation.isValid) {
+        console.warn('Validation issues found:', validation.issues)
+        // Don't throw error, but log issues for debugging
+      }
+
+      // Merge consecutive time blocks
+      const mergedEntries = mergeConsecutiveTimeBlocks(rawData.entries || [])
+
+      const processedData: TimetableData = {
+        studentName: rawData.studentName,
+        term: rawData.term,
+        entries: mergedEntries
+      }
+
+      console.log(`Processed ${rawData.entries?.length || 0} raw entries into ${mergedEntries.length} merged entries`)
+
+      return processedData
     } catch (error) {
       console.error('Failed to parse Gemini response:', text)
       throw new Error(`Failed to parse Gemini response: ${error}`)
