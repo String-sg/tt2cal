@@ -58,6 +58,70 @@ export function mergeConsecutiveTimeBlocks(entries: TimetableEntry[]): Timetable
   return mergedEntries
 }
 
+/**
+ * Consolidates duplicate entries from odd and even weeks into "both" week entries.
+ *
+ * When the same class (same day, time, subject, location) appears in both odd and even weeks,
+ * this function merges them into a single entry with weekType: "both".
+ *
+ * @param entries - Array of timetable entries that may contain duplicates
+ * @returns Array with odd/even duplicates consolidated into "both" entries
+ */
+export function consolidateWeekTypes(entries: TimetableEntry[]): TimetableEntry[] {
+  const consolidatedEntries: TimetableEntry[] = []
+  const processedKeys = new Set<string>()
+
+  for (const entry of entries) {
+    // Create a unique key for matching (excludes weekType)
+    const matchKey = `${entry.day}-${entry.timeStart}-${entry.timeEnd}-${entry.subject}-${entry.location}`
+
+    if (processedKeys.has(matchKey)) {
+      continue // Already processed this entry
+    }
+
+    // Find all entries that match this pattern
+    const matchingEntries = entries.filter(e =>
+      e.day === entry.day &&
+      e.timeStart === entry.timeStart &&
+      e.timeEnd === entry.timeEnd &&
+      e.subject === entry.subject &&
+      e.location === entry.location
+    )
+
+    if (matchingEntries.length === 1) {
+      // Single entry - keep as is
+      consolidatedEntries.push(matchingEntries[0])
+    } else if (matchingEntries.length === 2) {
+      // Check if we have both odd and even
+      const hasOdd = matchingEntries.some(e => e.weekType === 'odd')
+      const hasEven = matchingEntries.some(e => e.weekType === 'even')
+
+      if (hasOdd && hasEven) {
+        // Merge into "both"
+        const mergedEntry: TimetableEntry = {
+          ...matchingEntries[0],
+          weekType: 'both',
+          title: `${matchingEntries[0].subject}/${matchingEntries[0].location}`
+        }
+        consolidatedEntries.push(mergedEntry)
+      } else {
+        // Different week types but not odd/even pair - keep separate
+        consolidatedEntries.push(...matchingEntries)
+      }
+    } else if (matchingEntries.length > 2) {
+      // More than 2 entries - this shouldn't happen but handle gracefully
+      console.warn(`Found ${matchingEntries.length} matching entries for ${matchKey}`)
+      consolidatedEntries.push(...matchingEntries)
+    }
+
+    processedKeys.add(matchKey)
+  }
+
+  console.log(`Consolidated ${entries.length} entries into ${consolidatedEntries.length} entries`)
+
+  return consolidatedEntries
+}
+
 export function validateTimetableData(data: any): { isValid: boolean; issues: string[] } {
   const issues: string[] = []
 
