@@ -13,8 +13,6 @@
     "@types/pdf-parse": "^1.1.5",
     "ical-generator": "^10.0.0",
     "next": "16.1.1",
-    "pdf-parse": "^2.4.5",
-    "pdf2pic": "^3.2.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-dropzone": "^14.3.8"
