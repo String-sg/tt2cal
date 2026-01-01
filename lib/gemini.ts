@@ -1,15 +1,45 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { TimetableData } from './types'
-import { mergeConsecutiveTimeBlocks, validateTimetableData } from './timeblocks'
+import { mergeConsecutiveTimeBlocks, consolidateWeekTypes, validateTimetableData } from './timeblocks'
+import { TwoStageGeminiProcessor } from './two-stage-gemini'
 
 export class GeminiProcessor {
   private genAI: GoogleGenerativeAI
+  private apiKey: string
 
   constructor(apiKey: string) {
+    this.apiKey = apiKey
     this.genAI = new GoogleGenerativeAI(apiKey)
   }
 
-  async processTimetableImage(file: File): Promise<TimetableData> {
+  async processTimetableImage(file: File, useTwoStage: boolean = true): Promise<TimetableData> {
+    if (useTwoStage) {
+      console.log('Using two-stage Gemini processing...')
+      const twoStageProcessor = new TwoStageGeminiProcessor(this.apiKey)
+      const rawData = await twoStageProcessor.processImageTwoStage(file)
+
+      // Apply the same processing pipeline
+      const validation = validateTimetableData(rawData)
+      if (!validation.isValid) {
+        console.warn('Two-stage validation issues:', validation.issues)
+      }
+
+      const consolidatedEntries = consolidateWeekTypes(rawData.entries || [])
+      const mergedEntries = mergeConsecutiveTimeBlocks(consolidatedEntries)
+
+      console.log(`Two-stage processing pipeline:`)
+      console.log(`  Raw entries: ${rawData.entries?.length || 0}`)
+      console.log(`  After consolidation: ${consolidatedEntries.length}`)
+      console.log(`  After merging: ${mergedEntries.length}`)
+
+      return {
+        studentName: rawData.studentName,
+        term: rawData.term,
+        entries: mergedEntries
+      }
+    }
+
+    // Fallback to single-stage processing
     const model = this.genAI.getGenerativeModel({ model: 'gemini-2.5-flash-lite' })
 
     const prompt = `
@@ -86,8 +116,11 @@ Return ONLY valid JSON, no markdown formatting.`
         // Don't throw error, but log issues for debugging
       }
 
-      // Merge consecutive time blocks
-      const mergedEntries = mergeConsecutiveTimeBlocks(rawData.entries || [])
+      // Step 1: Consolidate odd/even duplicates into "both"
+      const consolidatedEntries = consolidateWeekTypes(rawData.entries || [])
+
+      // Step 2: Merge consecutive time blocks
+      const mergedEntries = mergeConsecutiveTimeBlocks(consolidatedEntries)
 
       const processedData: TimetableData = {
         studentName: rawData.studentName,
@@ -95,7 +128,10 @@ Return ONLY valid JSON, no markdown formatting.`
         entries: mergedEntries
       }
 
-      console.log(`Processed ${rawData.entries?.length || 0} raw entries into ${mergedEntries.length} merged entries`)
+      console.log(`Processing pipeline:`)
+      console.log(`  Raw entries: ${rawData.entries?.length || 0}`)
+      console.log(`  After consolidation: ${consolidatedEntries.length}`)
+      console.log(`  After merging: ${mergedEntries.length}`)
 
       return processedData
     } catch (error) {
